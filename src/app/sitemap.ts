@@ -1,7 +1,10 @@
 import type { MetadataRoute } from "next";
+import { getPuzzleDates } from "@/data/puzzles";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = "https://daily.alantern.com";
+  const puzzleDates = getPuzzleDates();
+
   return [
     {
       url: base,
@@ -39,5 +42,31 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.8,
     },
+    {
+      url: `${base}/hints/today`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.9,
+    },
+    {
+      url: `${base}/answers/today`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.9,
+    },
+    ...puzzleDates.flatMap((date) => [
+      {
+        url: `${base}/hints/${date}`,
+        lastModified: new Date(`${date}T00:00:00Z`),
+        changeFrequency: "monthly" as const,
+        priority: 0.7,
+      },
+      {
+        url: `${base}/answers/${date}`,
+        lastModified: new Date(`${date}T00:00:00Z`),
+        changeFrequency: "monthly" as const,
+        priority: 0.7,
+      },
+    ]),
   ];
 }
