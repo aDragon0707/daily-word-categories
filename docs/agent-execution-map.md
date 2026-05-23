@@ -36,12 +36,17 @@
 - Static daily puzzle pack in `src/data/puzzles.ts`.
 - Playable board: select 4, submit, solved groups, mistakes, reset, reveal.
 - `/api/bonus` reserved for trend-generated puzzles. It returns no content until a real generator exists, so the frontend falls back to static daily puzzle.
+- Viral loop: spoiler-free emoji result sharing via `Copy result`.
+- Retention loop: local browser streak and best streak stored in LocalStorage.
+- Monetization hook: `$1 Revive` reads `NEXT_PUBLIC_REVIVE_CHECKOUT_URL`; if absent, it grants one launch-promo revive and explains that paid checkout is not connected yet.
+- Ad hook: sponsor slot in the side rail for early newsletter/app/course ads.
 
 ### Differentiation For US/EU Market
 
 - Theme: editorial minimal puzzle page, sharper than a clone, lightweight enough for mobile.
 - Content: classic English categories mixed with US culture, tech, sports, streaming, office, campus, and phrase-trap groups.
 - Growth hook: later daily "Hot Bonus" puzzle generated from trends.
+- Monetization test: keep main puzzle free, monetize frustration/urgency with `$1 Revive`, then add sponsor inventory once traffic exists.
 
 ## Precise Task Packets
 

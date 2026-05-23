@@ -4,26 +4,102 @@ import { useEffect, useMemo, useState } from "react";
 import { getTodaysPuzzle, type Puzzle, type PuzzleGroup } from "@/data/puzzles";
 
 const MAX_MISTAKES = 4;
+const REVIVE_CHECKOUT_URL = process.env.NEXT_PUBLIC_REVIVE_CHECKOUT_URL;
+const SHARE_URL = "https://daily.alantern.com";
+const STREAK_KEY = "daily-word-categories:streak";
 
-function shuffle<T>(items: T[]) {
+type Guess = {
+  words: string[];
+  correct: boolean;
+  groupTitle?: string;
+  oneAway?: boolean;
+};
+
+type StreakState = {
+  lastSolvedDate: string;
+  streak: number;
+  best: number;
+};
+
+const difficultyEmoji: Record<PuzzleGroup["difficulty"], string> = {
+  easy: "🟨",
+  medium: "🟩",
+  hard: "🟦",
+  tricky: "🟪",
+};
+
+function seededShuffle<T>(items: T[], seedText: string) {
+  let seed = 0;
+  for (const char of seedText) seed = (seed * 31 + char.charCodeAt(0)) >>> 0;
+
   return [...items]
-    .map((item) => ({ item, sort: Math.random() }))
+    .map((item, index) => {
+      seed = (seed * 1664525 + 1013904223 + index) >>> 0;
+      return { item, sort: seed };
+    })
     .sort((a, b) => a.sort - b.sort)
     .map(({ item }) => item);
 }
 
-function groupForWord(puzzle: Puzzle, word: string) {
-  return puzzle.groups.find((group) => group.words.includes(word));
+function daysBetween(a: string, b: string) {
+  const one = Date.parse(`${a}T00:00:00Z`);
+  const two = Date.parse(`${b}T00:00:00Z`);
+  return Math.round((two - one) / 86_400_000);
+}
+
+function isOneAway(puzzle: Puzzle, selected: string[]) {
+  return puzzle.groups.some(
+    (group) => selected.filter((word) => group.words.includes(word)).length === 3,
+  );
+}
+
+function makeShareText(puzzle: Puzzle, guesses: Guess[], solved: PuzzleGroup[], mistakes: number, streak: number) {
+  const solvedTitles = new Set(solved.map((group) => group.title));
+  const rows = guesses.map((guess) => {
+    if (!guess.correct || !guess.groupTitle) return guess.oneAway ? "🟧⬜⬜⬜" : "⬜⬜⬜⬜";
+    const group = puzzle.groups.find((item) => item.title === guess.groupTitle);
+    return (group ? difficultyEmoji[group.difficulty] : "🟩").repeat(4);
+  });
+
+  if (solved.length === 4) {
+    for (const group of puzzle.groups) {
+      if (!solvedTitles.has(group.title)) rows.push(difficultyEmoji[group.difficulty].repeat(4));
+    }
+  }
+
+  return [
+    `Daily Word Categories ${puzzle.id}`,
+    `${solved.length}/4 groups · ${mistakes} mistake${mistakes === 1 ? "" : "s"} · ${streak} day streak`,
+    rows.join("\n"),
+    SHARE_URL,
+  ].join("\n");
 }
 
 export default function Home() {
   const fallbackPuzzle = useMemo(() => getTodaysPuzzle(), []);
   const [puzzle, setPuzzle] = useState(fallbackPuzzle);
   const [source, setSource] = useState<"daily" | "bonus">("daily");
-  const [words, setWords] = useState(() => shuffle(fallbackPuzzle.groups.flatMap((group) => group.words)));
+  const [words, setWords] = useState(() =>
+    seededShuffle(fallbackPuzzle.groups.flatMap((group) => group.words), fallbackPuzzle.id),
+  );
   const [selected, setSelected] = useState<string[]>([]);
   const [solved, setSolved] = useState<PuzzleGroup[]>([]);
+  const [guesses, setGuesses] = useState<Guess[]>([]);
   const [mistakes, setMistakes] = useState(0);
+  const [revivesUsed, setRevivesUsed] = useState(0);
+  const [streak, setStreak] = useState<StreakState>(() => {
+    if (typeof window === "undefined") return { lastSolvedDate: "", streak: 0, best: 0 };
+
+    const stored = window.localStorage.getItem(STREAK_KEY);
+    if (!stored) return { lastSolvedDate: "", streak: 0, best: 0 };
+
+    try {
+      return JSON.parse(stored) as StreakState;
+    } catch {
+      window.localStorage.removeItem(STREAK_KEY);
+      return { lastSolvedDate: "", streak: 0, best: 0 };
+    }
+  });
   const [message, setMessage] = useState("Find four words that share a hidden link.");
 
   useEffect(() => {
@@ -35,7 +111,7 @@ export default function Home() {
         if (bonus?.groups?.length === 4) {
           setPuzzle(bonus);
           setSource("bonus");
-          setWords(shuffle(bonus.groups.flatMap((group) => group.words)));
+          setWords(seededShuffle(bonus.groups.flatMap((group) => group.words), bonus.id));
         }
       } catch {
         setSource("daily");
@@ -48,6 +124,23 @@ export default function Home() {
   const isComplete = solved.length === puzzle.groups.length;
   const isGameOver = mistakes >= MAX_MISTAKES && !isComplete;
   const remainingMistakes = Math.max(0, MAX_MISTAKES - mistakes);
+  const shareText = makeShareText(puzzle, guesses, solved, mistakes, streak.streak);
+
+  function recordCompletion() {
+    setStreak((current) => {
+      if (current.lastSolvedDate === puzzle.date) return current;
+
+      const gap = current.lastSolvedDate ? daysBetween(current.lastSolvedDate, puzzle.date) : 0;
+      const nextStreak = gap === 1 ? current.streak + 1 : 1;
+      const next = {
+        lastSolvedDate: puzzle.date,
+        streak: nextStreak,
+        best: Math.max(current.best, nextStreak),
+      };
+      window.localStorage.setItem(STREAK_KEY, JSON.stringify(next));
+      return next;
+    });
+  }
 
   function toggleWord(word: string) {
     if (isComplete || isGameOver || solved.some((group) => group.words.includes(word))) return;
@@ -69,25 +162,59 @@ export default function Home() {
     );
 
     if (matchingGroup) {
+      const willComplete = solved.length === puzzle.groups.length - 1;
       setSolved((current) => [...current, matchingGroup]);
+      setGuesses((current) => [
+        ...current,
+        { words: selected, correct: true, groupTitle: matchingGroup.title },
+      ]);
       setWords((current) => current.filter((word) => !matchingGroup.words.includes(word)));
       setSelected([]);
       setMessage(`Solved: ${matchingGroup.title}`);
+      if (willComplete) recordCompletion();
       return;
     }
 
-    const groupsTouched = new Set(selected.map((word) => groupForWord(puzzle, word)?.title));
+    const oneAway = isOneAway(puzzle, selected);
+    setGuesses((current) => [...current, { words: selected, correct: false, oneAway }]);
     setMistakes((current) => current + 1);
-    setMessage(groupsTouched.size === 2 ? "One away." : "No match. Try a cleaner connection.");
+    setMessage(oneAway ? "One away." : "No match. Try a cleaner connection.");
     setSelected([]);
   }
 
   function resetPuzzle() {
-    setWords(shuffle(puzzle.groups.flatMap((group) => group.words)));
+    setWords(seededShuffle(puzzle.groups.flatMap((group) => group.words), `${puzzle.id}:${Date.now()}`));
     setSelected([]);
     setSolved([]);
+    setGuesses([]);
     setMistakes(0);
+    setRevivesUsed(0);
     setMessage("Board reset. Look for the cleanest four-word set.");
+  }
+
+  function revive() {
+    if (REVIVE_CHECKOUT_URL) {
+      window.location.href = `${REVIVE_CHECKOUT_URL}?puzzle=${encodeURIComponent(puzzle.id)}`;
+      return;
+    }
+
+    if (revivesUsed > 0) {
+      setMessage("Paid revive checkout is not connected yet.");
+      return;
+    }
+
+    setRevivesUsed(1);
+    setMistakes(MAX_MISTAKES - 1);
+    setMessage("Launch promo revive used. Paid $1 revive plugs in here next.");
+  }
+
+  async function copyResult() {
+    try {
+      await navigator.clipboard.writeText(shareText);
+      setMessage("Result copied. Drop it on X, Reddit, or your group chat.");
+    } catch {
+      setMessage("Copy failed. Select the result text manually.");
+    }
   }
 
   function revealPuzzle() {
@@ -171,7 +298,7 @@ export default function Home() {
             <div className="flex flex-wrap items-center justify-center gap-3">
               <button
                 type="button"
-                onClick={() => setWords(shuffle(words))}
+                onClick={() => setWords(seededShuffle(words, `${puzzle.id}:${guesses.length}:${selected.join("")}`))}
                 className="rounded-md border border-[#17140f] bg-white px-4 py-2 font-bold shadow-[3px_3px_0_#17140f]"
               >
                 Shuffle
@@ -192,6 +319,33 @@ export default function Home() {
                 Reset
               </button>
             </div>
+
+            {(isComplete || isGameOver) && (
+              <div className="rounded-md border border-[#17140f] bg-[#17140f] p-4 text-white shadow-[6px_6px_0_#8d3f2b]">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h2 className="text-xl font-black">
+                      {isComplete ? "Share your board" : "Almost had it?"}
+                    </h2>
+                    <p className="mt-1 text-sm text-[#efe5d1]">
+                      {isComplete
+                        ? "Copy the spoiler-free grid and make people ask what it means."
+                        : "Buy one more guess or reveal the board."}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={copyResult}
+                    className="rounded-md border border-white bg-[#f0c64d] px-4 py-2 font-black text-[#17140f]"
+                  >
+                    Copy result
+                  </button>
+                </div>
+                <pre className="mt-4 overflow-auto whitespace-pre-wrap rounded-md bg-black/30 p-3 font-mono text-xs leading-5">
+                  {shareText}
+                </pre>
+              </div>
+            )}
           </section>
 
           <aside className="rounded-md border border-[#17140f] bg-[#fffdf7] p-5 shadow-[6px_6px_0_#17140f]">
@@ -201,10 +355,21 @@ export default function Home() {
               media, startup, sports, or phrase traps built for US readers.
             </p>
 
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <div className="rounded-md border border-[#17140f] bg-[#f0c64d] p-3">
+                <p className="text-xs font-bold uppercase">Streak</p>
+                <p className="text-3xl font-black">{streak.streak}</p>
+              </div>
+              <div className="rounded-md border border-[#17140f] bg-[#b7d4c7] p-3">
+                <p className="text-xs font-bold uppercase">Best</p>
+                <p className="text-3xl font-black">{streak.best}</p>
+              </div>
+            </div>
+
             <div className="mt-6 grid gap-3">
               {puzzle.groups.map((group) => (
                 <div key={group.title} className="flex items-center justify-between border-t border-[#17140f1f] pt-3">
-                  <span className="text-sm font-bold">{group.difficulty}</span>
+                  <span className="text-sm font-bold">{difficultyEmoji[group.difficulty]} {group.difficulty}</span>
                   <span className="text-xs uppercase tracking-[0.14em] text-[#8d3f2b]">
                     {solved.includes(group) || isGameOver ? group.title : "hidden"}
                   </span>
@@ -212,19 +377,34 @@ export default function Home() {
               ))}
             </div>
 
+            <div className="mt-6 rounded-md border border-dashed border-[#17140f] bg-[#f7f4ec] p-4">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#8d3f2b]">Sponsor slot</p>
+              <p className="mt-2 text-sm font-bold">Your app, newsletter, or vocabulary course here.</p>
+              <p className="mt-1 text-xs text-[#6c6254]">Launch ad inventory reserved for the first traffic test.</p>
+            </div>
+
             {isComplete && (
               <div className="mt-6 rounded-md bg-[#4d8b6f] p-4 font-bold text-white">
-                Perfect board. Come back tomorrow for a fresh set.
+                Perfect board. Come back tomorrow to protect your streak.
               </div>
             )}
             {isGameOver && (
-              <button
-                type="button"
-                onClick={revealPuzzle}
-                className="mt-6 w-full rounded-md border border-[#17140f] bg-[#d95d45] px-4 py-3 font-black text-white shadow-[3px_3px_0_#17140f]"
-              >
-                Reveal answers
-              </button>
+              <div className="mt-6 grid gap-3">
+                <button
+                  type="button"
+                  onClick={revive}
+                  className="w-full rounded-md border border-[#17140f] bg-[#f0c64d] px-4 py-3 font-black text-[#17140f] shadow-[3px_3px_0_#17140f]"
+                >
+                  $1 Revive
+                </button>
+                <button
+                  type="button"
+                  onClick={revealPuzzle}
+                  className="w-full rounded-md border border-[#17140f] bg-[#d95d45] px-4 py-3 font-black text-white shadow-[3px_3px_0_#17140f]"
+                >
+                  Reveal answers
+                </button>
+              </div>
             )}
           </aside>
         </div>
