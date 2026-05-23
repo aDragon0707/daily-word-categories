@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { trackEvent } from "@/lib/analytics";
 import { getTodaysPuzzle, type Puzzle, type PuzzleGroup } from "@/data/puzzles";
 import { makeShareText } from "@/lib/share";
@@ -224,6 +225,42 @@ export default function Home() {
             <span className="ml-3 font-mono text-xs">{puzzle.edition}</span>
           </div>
         </header>
+
+        <section className="border-b border-[#2d2a221f] py-4">
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="font-bold text-[#6c6254]">Explore:</span>
+            <Link className="rounded-full border border-[#17140f] bg-white px-3 py-1.5 font-bold shadow-[2px_2px_0_#17140f]" href="/hints/today">
+              Hints
+            </Link>
+            <Link className="rounded-full border border-[#17140f] bg-white px-3 py-1.5 font-bold shadow-[2px_2px_0_#17140f]" href="/answers/today">
+              Answers
+            </Link>
+            <Link className="rounded-full border border-[#17140f] bg-white px-3 py-1.5 font-bold shadow-[2px_2px_0_#17140f]" href="/daily-english-vocabulary-puzzle">
+              Daily vocabulary
+            </Link>
+            <Link className="rounded-full border border-[#17140f] bg-white px-3 py-1.5 font-bold shadow-[2px_2px_0_#17140f]" href="/american-culture-word-game">
+              American culture
+            </Link>
+            <Link className="rounded-full border border-[#17140f] bg-white px-3 py-1.5 font-bold shadow-[2px_2px_0_#17140f]" href="/esl-vocabulary-game">
+              ESL game
+            </Link>
+            <Link className="rounded-full border border-[#17140f] bg-white px-3 py-1.5 font-bold shadow-[2px_2px_0_#17140f]" href="/word-association-puzzle">
+              Word association
+            </Link>
+            <Link className="rounded-full border border-[#17140f] bg-white px-3 py-1.5 font-bold shadow-[2px_2px_0_#17140f]" href="/nyt-connections-alternative-for-english-learners">
+              NYT alternative
+            </Link>
+            <Link className="rounded-full border border-[#17140f] bg-white px-3 py-1.5 font-bold shadow-[2px_2px_0_#17140f]" href="/privacy">
+              Privacy
+            </Link>
+            <Link className="rounded-full border border-[#17140f] bg-white px-3 py-1.5 font-bold shadow-[2px_2px_0_#17140f]" href="/terms">
+              Terms
+            </Link>
+            <Link className="rounded-full border border-[#17140f] bg-white px-3 py-1.5 font-bold shadow-[2px_2px_0_#17140f]" href="/contact">
+              Contact
+            </Link>
+          </div>
+        </section>
 
         <div className="grid flex-1 gap-6 py-6 lg:grid-cols-[1fr_320px]">
           <section className="flex flex-col gap-4">
