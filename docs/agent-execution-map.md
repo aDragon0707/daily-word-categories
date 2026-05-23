@@ -25,8 +25,8 @@
 | Phase 1 Account matrix | Mostly complete | GitHub CLI logged in, Supabase project created by user, Replicate dashboard reached, Vercel logged in, Cloudflare DNS available | Record account status in final launch receipt |
 | Phase 2 Toolchain | Partial | Node, npm, Git present. `pnpm`, `vercel`, `supabase` missing | Install only needed CLIs before deployment |
 | Phase 3 Open Design | Skipped by user direction | User chose static MVP + API hook path | Do not block launch on Open Design |
-| Phase 4 Full-stack MVP | In progress | Next.js app exists, static puzzles and `/api/bonus` hook added | Finish UI, metadata, build |
-| Phase 5 Deploy/SEO | Pending | `daily.alantern.com` CNAME already resolves to Vercel | Create GitHub repo, push, deploy, bind domain |
+| Phase 4 Full-stack MVP | Complete for launch MVP | Next.js app, static puzzles, `/api/bonus`, metadata, sitemap, robots; `npm run build` passes | Optional Supabase/Replicate automation later |
+| Phase 5 Deploy/SEO | Deployed, SEO submit pending | GitHub repo pushed, Vercel production ready, `daily.alantern.com` returns 200 | Optional Google Search Console submission |
 
 ## Current Product Plan
 
@@ -95,6 +95,12 @@ Steps:
 Verify:
 - Vercel production URL works.
 - `daily.alantern.com` shows site.
+
+Current evidence:
+- GitHub: `https://github.com/aDragon0707/daily-word-categories`
+- Vercel production: `https://daily-word-categories-alpha.vercel.app`
+- Custom domain: `https://daily.alantern.com`
+- DNS: `daily.alantern.com` CNAMEs to `cname.vercel-dns.com`
 
 Stop if:
 - Vercel asks for paid plan, billing, or manual account approval.
