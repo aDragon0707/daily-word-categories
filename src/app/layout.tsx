@@ -28,7 +28,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <footer className="border-t border-[#2d2a221f] bg-[#f7f4ec] px-4 py-6 text-sm text-[#4f473b] sm:px-6 lg:px-8">
+          <div className="mx-auto flex w-full max-w-5xl flex-wrap gap-4">
+            <a href="/privacy" className="font-semibold hover:underline">
+              Privacy
+            </a>
+            <a href="/terms" className="font-semibold hover:underline">
+              Terms
+            </a>
+            <a href="/contact" className="font-semibold hover:underline">
+              Contact
+            </a>
+          </div>
+        </footer>
+      </body>
     </html>
   );
 }
