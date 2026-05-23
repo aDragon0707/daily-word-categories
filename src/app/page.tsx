@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { trackEvent } from "@/lib/analytics";
 import { getTodaysPuzzle, type Puzzle, type PuzzleGroup } from "@/data/puzzles";
+import { makeShareText } from "@/lib/share";
 
 const MAX_MISTAKES = 4;
 const REVIVE_CHECKOUT_URL = process.env.NEXT_PUBLIC_REVIVE_CHECKOUT_URL;
@@ -19,13 +21,6 @@ type StreakState = {
   lastSolvedDate: string;
   streak: number;
   best: number;
-};
-
-const difficultyEmoji: Record<PuzzleGroup["difficulty"], string> = {
-  easy: "🟨",
-  medium: "🟩",
-  hard: "🟦",
-  tricky: "🟪",
 };
 
 function seededShuffle<T>(items: T[], seedText: string) {
@@ -51,28 +46,6 @@ function isOneAway(puzzle: Puzzle, selected: string[]) {
   return puzzle.groups.some(
     (group) => selected.filter((word) => group.words.includes(word)).length === 3,
   );
-}
-
-function makeShareText(puzzle: Puzzle, guesses: Guess[], solved: PuzzleGroup[], mistakes: number, streak: number) {
-  const solvedTitles = new Set(solved.map((group) => group.title));
-  const rows = guesses.map((guess) => {
-    if (!guess.correct || !guess.groupTitle) return guess.oneAway ? "🟧⬜⬜⬜" : "⬜⬜⬜⬜";
-    const group = puzzle.groups.find((item) => item.title === guess.groupTitle);
-    return (group ? difficultyEmoji[group.difficulty] : "🟩").repeat(4);
-  });
-
-  if (solved.length === 4) {
-    for (const group of puzzle.groups) {
-      if (!solvedTitles.has(group.title)) rows.push(difficultyEmoji[group.difficulty].repeat(4));
-    }
-  }
-
-  return [
-    `Daily Word Categories ${puzzle.id}`,
-    `${solved.length}/4 groups · ${mistakes} mistake${mistakes === 1 ? "" : "s"} · ${streak} day streak`,
-    rows.join("\n"),
-    SHARE_URL,
-  ].join("\n");
 }
 
 export default function Home() {
@@ -124,7 +97,7 @@ export default function Home() {
   const isComplete = solved.length === puzzle.groups.length;
   const isGameOver = mistakes >= MAX_MISTAKES && !isComplete;
   const remainingMistakes = Math.max(0, MAX_MISTAKES - mistakes);
-  const shareText = makeShareText(puzzle, guesses, solved, mistakes, streak.streak);
+  const shareText = makeShareText(puzzle, guesses, solved, mistakes, streak.streak, SHARE_URL);
 
   function recordCompletion() {
     setStreak((current) => {
@@ -194,7 +167,9 @@ export default function Home() {
 
   function revive() {
     if (REVIVE_CHECKOUT_URL) {
-      window.location.href = `${REVIVE_CHECKOUT_URL}?puzzle=${encodeURIComponent(puzzle.id)}`;
+      const checkoutUrl = new URL(REVIVE_CHECKOUT_URL);
+      checkoutUrl.searchParams.set("puzzle", puzzle.id);
+      window.location.href = checkoutUrl.toString();
       return;
     }
 
@@ -209,9 +184,17 @@ export default function Home() {
   }
 
   async function copyResult() {
+    trackEvent("share_click", {
+      puzzle_id: puzzle.id,
+      source,
+      solved_groups: solved.length,
+      mistakes,
+      streak: streak.streak,
+    });
+
     try {
       await navigator.clipboard.writeText(shareText);
-      setMessage("Result copied. Drop it on X, Reddit, or your group chat.");
+      setMessage("Result copied. Share it on X, Reddit, or your group chat.");
     } catch {
       setMessage("Copy failed. Select the result text manually.");
     }
@@ -325,7 +308,7 @@ export default function Home() {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <h2 className="text-xl font-black">
-                      {isComplete ? "Share your board" : "Almost had it?"}
+                      {isComplete ? "Share your result" : "Almost had it?"}
                     </h2>
                     <p className="mt-1 text-sm text-[#efe5d1]">
                       {isComplete
@@ -338,7 +321,7 @@ export default function Home() {
                     onClick={copyResult}
                     className="rounded-md border border-white bg-[#f0c64d] px-4 py-2 font-black text-[#17140f]"
                   >
-                    Copy result
+                    Share result
                   </button>
                 </div>
                 <pre className="mt-4 overflow-auto whitespace-pre-wrap rounded-md bg-black/30 p-3 font-mono text-xs leading-5">
@@ -369,7 +352,7 @@ export default function Home() {
             <div className="mt-6 grid gap-3">
               {puzzle.groups.map((group) => (
                 <div key={group.title} className="flex items-center justify-between border-t border-[#17140f1f] pt-3">
-                  <span className="text-sm font-bold">{difficultyEmoji[group.difficulty]} {group.difficulty}</span>
+                  <span className="text-sm font-bold">{group.difficulty}</span>
                   <span className="text-xs uppercase tracking-[0.14em] text-[#8d3f2b]">
                     {solved.includes(group) || isGameOver ? group.title : "hidden"}
                   </span>
