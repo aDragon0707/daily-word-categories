@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -29,6 +30,12 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5307846781930832"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
         {children}
         <footer className="border-t border-[#2d2a221f] bg-[#f7f4ec] px-4 py-6 text-sm text-[#4f473b] sm:px-6 lg:px-8">
           <div className="mx-auto flex w-full max-w-5xl flex-wrap gap-4">
