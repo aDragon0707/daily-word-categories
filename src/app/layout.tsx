@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   description:
     "A daily English word grouping puzzle with culture, phrase, tech, sports, and media categories.",
   metadataBase: new URL("https://daily.alantern.com"),
+  verification: {
+    google: "p62Qh3vZl2fUMf1JVBC18MBUBf2ZAELoGf6K9yEjpYM",
+  },
   alternates: {
     canonical: "/",
   },
