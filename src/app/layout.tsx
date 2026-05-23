@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://daily.alantern.com"),
   verification: {
     google: "p62Qh3vZl2fUMf1JVBC18MBUBf2ZAELoGf6K9yEjpYM",
+    other: {
+      "google-adsense-account": "ca-pub-5307846781930832",
+    },
   },
   alternates: {
     canonical: "/",
