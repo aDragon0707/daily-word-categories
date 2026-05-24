@@ -5,6 +5,7 @@ import Link from "next/link";
 import { trackEvent } from "@/lib/analytics";
 import { getTodaysPuzzle, type Puzzle, type PuzzleGroup } from "@/data/puzzles";
 import { makeShareText } from "@/lib/share";
+import { emitSound } from "@/lib/sound-feedback";
 
 const MAX_MISTAKES = 4;
 const REVIVE_CHECKOUT_URL = process.env.NEXT_PUBLIC_REVIVE_CHECKOUT_URL;
@@ -145,6 +146,7 @@ export default function Home() {
       setWords((current) => current.filter((word) => !matchingGroup.words.includes(word)));
       setSelected([]);
       setMessage(`Solved: ${matchingGroup.title}`);
+      emitSound("success");
       if (willComplete) recordCompletion();
       return;
     }
@@ -154,6 +156,7 @@ export default function Home() {
     setMistakes((current) => current + 1);
     setMessage(oneAway ? "One away." : "No match. Try a cleaner connection.");
     setSelected([]);
+    emitSound("error");
   }
 
   function resetPuzzle() {
@@ -299,14 +302,15 @@ export default function Home() {
               {words.map((word) => {
                 const active = selected.includes(word);
                 return (
-                  <button
-                    key={word}
-                    type="button"
-                    onClick={() => toggleWord(word)}
-                    className={`aspect-[1.55] rounded-md border border-[#17140f] px-2 text-sm font-black transition sm:text-base ${
-                      active
-                        ? "translate-x-1 translate-y-1 bg-[#17140f] text-white shadow-none"
-                        : "bg-[#fffdf7] shadow-[3px_3px_0_#17140f] hover:-translate-y-0.5 hover:bg-[#f0c64d]"
+                    <button
+                      key={word}
+                      type="button"
+                      onClick={() => toggleWord(word)}
+                      data-click-sound="select"
+                      className={`aspect-[1.55] rounded-md border border-[#17140f] px-2 text-sm font-black transition sm:text-base ${
+                        active
+                          ? "translate-x-1 translate-y-1 bg-[#17140f] text-white shadow-none"
+                          : "bg-[#fffdf7] shadow-[3px_3px_0_#17140f] hover:-translate-y-0.5 hover:bg-[#f0c64d]"
                     }`}
                   >
                     {word}
@@ -319,6 +323,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setWords(seededShuffle(words, `${puzzle.id}:${guesses.length}:${selected.join("")}`))}
+                data-click-sound="soft"
                 className="rounded-md border border-[#17140f] bg-white px-4 py-2 font-bold shadow-[3px_3px_0_#17140f]"
               >
                 Shuffle
@@ -327,6 +332,7 @@ export default function Home() {
                 type="button"
                 onClick={submitGuess}
                 disabled={selected.length !== 4 || isComplete || isGameOver}
+                data-click-sound="submit"
                 className="rounded-md border border-[#17140f] bg-[#17140f] px-5 py-2 font-bold text-white shadow-[3px_3px_0_#8d3f2b] disabled:cursor-not-allowed disabled:bg-[#9c978d]"
               >
                 Submit
@@ -334,6 +340,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={resetPuzzle}
+                data-click-sound="soft"
                 className="rounded-md border border-[#17140f] bg-white px-4 py-2 font-bold shadow-[3px_3px_0_#17140f]"
               >
                 Reset
@@ -356,6 +363,7 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={copyResult}
+                    data-click-sound="success"
                     className="rounded-md border border-white bg-[#f0c64d] px-4 py-2 font-black text-[#17140f]"
                   >
                     Share result
@@ -413,6 +421,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={revive}
+                  data-click-sound="submit"
                   className="w-full rounded-md border border-[#17140f] bg-[#f0c64d] px-4 py-3 font-black text-[#17140f] shadow-[3px_3px_0_#17140f]"
                 >
                   $1 Revive
@@ -420,6 +429,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={revealPuzzle}
+                  data-click-sound="error"
                   className="w-full rounded-md border border-[#17140f] bg-[#d95d45] px-4 py-3 font-black text-white shadow-[3px_3px_0_#17140f]"
                 >
                   Reveal answers

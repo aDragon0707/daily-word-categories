@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import "./globals.css";
+import { ClickFeedback } from "@/components/click-feedback";
 
 export const metadata: Metadata = {
   title: "Daily Word Categories",
@@ -39,6 +40,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />
+        <ClickFeedback />
         {children}
         <footer className="border-t border-[#2d2a221f] bg-[#f7f4ec] px-4 py-6 text-sm text-[#4f473b] sm:px-6 lg:px-8">
           <div className="mx-auto flex w-full max-w-5xl flex-wrap gap-4">
