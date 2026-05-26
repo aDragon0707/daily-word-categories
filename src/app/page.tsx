@@ -238,6 +238,9 @@ export default function Home() {
             <Link className="rounded-full border border-[#17140f] bg-white px-3 py-1.5 font-bold shadow-[2px_2px_0_#17140f]" href="/answers/today">
               Answers
             </Link>
+            <Link className="rounded-full border border-[#17140f] bg-white px-3 py-1.5 font-bold shadow-[2px_2px_0_#17140f]" href="/how-to-play">
+              How to play
+            </Link>
             <Link className="rounded-full border border-[#17140f] bg-white px-3 py-1.5 font-bold shadow-[2px_2px_0_#17140f]" href="/daily-english-vocabulary-puzzle">
               Daily vocabulary
             </Link>
@@ -252,6 +255,9 @@ export default function Home() {
             </Link>
             <Link className="rounded-full border border-[#17140f] bg-white px-3 py-1.5 font-bold shadow-[2px_2px_0_#17140f]" href="/nyt-connections-alternative-for-english-learners">
               NYT alternative
+            </Link>
+            <Link className="rounded-full border border-[#17140f] bg-white px-3 py-1.5 font-bold shadow-[2px_2px_0_#17140f]" href="/about">
+              About
             </Link>
             <Link className="rounded-full border border-[#17140f] bg-white px-3 py-1.5 font-bold shadow-[2px_2px_0_#17140f]" href="/privacy">
               Privacy

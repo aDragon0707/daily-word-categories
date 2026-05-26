@@ -44,6 +44,12 @@ export default function RootLayout({
         {children}
         <footer className="border-t border-[#2d2a221f] bg-[#f7f4ec] px-4 py-6 text-sm text-[#4f473b] sm:px-6 lg:px-8">
           <div className="mx-auto flex w-full max-w-5xl flex-wrap gap-4">
+            <a href="/how-to-play" className="font-semibold hover:underline">
+              How to play
+            </a>
+            <a href="/about" className="font-semibold hover:underline">
+              About
+            </a>
             <a href="/privacy" className="font-semibold hover:underline">
               Privacy
             </a>
