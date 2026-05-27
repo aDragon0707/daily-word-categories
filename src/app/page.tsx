@@ -6,9 +6,10 @@ import { trackEvent } from "@/lib/analytics";
 import { getTodaysPuzzle, type Puzzle, type PuzzleGroup } from "@/data/puzzles";
 import { makeShareText } from "@/lib/share";
 import { emitSound } from "@/lib/sound-feedback";
+import { buildSupporterCheckoutUrl } from "@/lib/supporter-checkout";
 
 const MAX_MISTAKES = 4;
-const REVIVE_CHECKOUT_URL = process.env.NEXT_PUBLIC_REVIVE_CHECKOUT_URL;
+const SUPPORTER_CHECKOUT_URL = process.env.NEXT_PUBLIC_SUPPORTER_CHECKOUT_URL;
 const SHARE_URL = "https://daily.alantern.com";
 const STREAK_KEY = "daily-word-categories:streak";
 
@@ -61,7 +62,6 @@ export default function Home() {
   const [solved, setSolved] = useState<PuzzleGroup[]>([]);
   const [guesses, setGuesses] = useState<Guess[]>([]);
   const [mistakes, setMistakes] = useState(0);
-  const [revivesUsed, setRevivesUsed] = useState(0);
   const [streak, setStreak] = useState<StreakState>(() => {
     if (typeof window === "undefined") return { lastSolvedDate: "", streak: 0, best: 0 };
 
@@ -165,26 +165,17 @@ export default function Home() {
     setSolved([]);
     setGuesses([]);
     setMistakes(0);
-    setRevivesUsed(0);
     setMessage("Board reset. Look for the cleanest four-word set.");
   }
 
-  function revive() {
-    if (REVIVE_CHECKOUT_URL) {
-      const checkoutUrl = new URL(REVIVE_CHECKOUT_URL);
-      checkoutUrl.searchParams.set("puzzle", puzzle.id);
+  function openSupporterCheckout() {
+    const checkoutUrl = buildSupporterCheckoutUrl(SUPPORTER_CHECKOUT_URL, { puzzleId: puzzle.id });
+    if (checkoutUrl) {
       window.location.href = checkoutUrl.toString();
       return;
     }
 
-    if (revivesUsed > 0) {
-      setMessage("Paid revive checkout is not connected yet.");
-      return;
-    }
-
-    setRevivesUsed(1);
-    setMistakes(MAX_MISTAKES - 1);
-    setMessage("Launch promo revive used. Paid $1 revive plugs in here next.");
+    setMessage("Founding Supporter checkout is not connected yet.");
   }
 
   async function copyResult() {
@@ -363,7 +354,7 @@ export default function Home() {
                     <p className="mt-1 text-sm text-[#efe5d1]">
                       {isComplete
                         ? "Copy the spoiler-free grid and make people ask what it means."
-                        : "Buy one more guess or reveal the board."}
+                        : "Support future puzzles or reveal the board."}
                     </p>
                   </div>
                   <button
@@ -412,9 +403,11 @@ export default function Home() {
             </div>
 
             <div className="mt-6 rounded-md border border-dashed border-[#17140f] bg-[#f7f4ec] p-4">
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#8d3f2b]">Sponsor slot</p>
-              <p className="mt-2 text-sm font-bold">Your app, newsletter, or vocabulary course here.</p>
-              <p className="mt-1 text-xs text-[#6c6254]">Launch ad inventory reserved for the first traffic test.</p>
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#8d3f2b]">Founding Supporter</p>
+              <p className="mt-2 text-sm font-bold">Help keep the daily puzzle running.</p>
+              <p className="mt-1 text-xs text-[#6c6254]">
+                Supporter checkout is being prepared after the first traffic test.
+              </p>
             </div>
 
             {isComplete && (
@@ -426,11 +419,11 @@ export default function Home() {
               <div className="mt-6 grid gap-3">
                 <button
                   type="button"
-                  onClick={revive}
+                  onClick={openSupporterCheckout}
                   data-click-sound="submit"
                   className="w-full rounded-md border border-[#17140f] bg-[#f0c64d] px-4 py-3 font-black text-[#17140f] shadow-[3px_3px_0_#17140f]"
                 >
-                  $1 Revive
+                  Founding Supporter
                 </button>
                 <button
                   type="button"
